@@ -18,6 +18,15 @@
 #define RECV_BUF_SZ 4096
 #define SEND_BUF_SZ 4096
 
+// Helper function to print a MD5 hash to stdout
+static void print_md5(const char *hash)
+{
+	int i;
+	for (i = 0; i < mhash_get_block_size(MHASH_MD5); i++) {
+		printf("%.2x", hash[i]);
+	}
+}
+
 int ftpc_request(int sockfd, const char *arg, size_t arglen)
 {
 	char recv_buf[RECV_BUF_SZ];
@@ -123,6 +132,9 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 	printf("Transfer successful.\n");
 	printf("Total Bytes: %d Transfer Time: %.2f Rate: %.2f\n", 
 			file_size, transfer_secs, file_size / transfer_secs);
+	printf("MD5: ");
+	print_md5(file_hash);
+	printf("\n");
 	return 0;
 }
 
@@ -233,6 +245,9 @@ int ftpc_upload(int sockfd, const char *arg, size_t arglen)
 	printf("Upload successful!\n");
 	printf("Total Bytes: %d Transfer Time: %.2f Rate: %.2f\n", 
 			file_size, transfer_secs, file_size / transfer_secs);
+	printf("MD5: ");
+	print_md5(hash_buf);
+	printf("\n");
 	return 0;
 }
 
