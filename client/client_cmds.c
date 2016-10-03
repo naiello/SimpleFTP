@@ -13,6 +13,7 @@
 
 #include "../common/cmd_defs.h"
 #include "client_cmds.h"
+#include "timing.h"
 
 #define RECV_BUF_SZ 4096
 #define SEND_BUF_SZ 4096
@@ -29,6 +30,8 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 	FILE *outfd;
 	size_t recv_counter = 0;
 	size_t recv_current;
+	unsigned long transfer_time;
+	double transfer_secs;
 
 	// send request to server and wait for ACK (short int > 0)
 	send_code = htons(CMD_REQ);
@@ -91,6 +94,7 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 	}
 
 	// read the file in blocks from the server
+	tic();
 	while (recv_counter < file_size) {
 		memset(recv_buf, 0, sizeof(recv_buf));
 		if ((recv_current = recv(sockfd, recv_buf, sizeof(recv_buf), 0)) < 0) {
@@ -102,6 +106,8 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 		mhash(hashd, recv_buf, recv_current);
 		recv_counter += recv_current;
 	}
+	transfer_time = toc();
+	transfer_secs = transfer_time / 1.0e6;
 
 	// close file and compute the hash
 	mhash_deinit(hashd, recv_hash);
@@ -114,8 +120,9 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 		return -9;
 	}
 
-	// TODO: compute throughput
 	printf("Transfer successful.\n");
+	printf("Total Bytes: %d Transfer Time: %.2f Rate: %.2f\n", 
+			file_size, transfer_secs, file_size / transfer_secs);
 	return 0;
 }
 
@@ -131,6 +138,8 @@ int ftpc_upload(int sockfd, const char *arg, size_t arglen)
 	char hash_buf[16];
 	int32_t file_size;
 	size_t send_counter, read_current, send_current;
+	unsigned long transfer_time;
+	double transfer_secs;
 
 	// make sure file exists
 	if (stat(arg, &file_info) < 0) {
@@ -185,6 +194,7 @@ int ftpc_upload(int sockfd, const char *arg, size_t arglen)
 	send_counter = 0;
 
 	// begin transmitting file
+	tic();
 	while (send_counter < file_size) {
 		memset(send_buf, 0, sizeof(send_buf));
 		if ((read_current = fread(send_buf, sizeof(char),
@@ -201,6 +211,8 @@ int ftpc_upload(int sockfd, const char *arg, size_t arglen)
 
 		send_counter += send_current;
 	}
+	transfer_time = toc();
+	transfer_secs = transfer_time / 1.0e6;
 
 	fclose(infd);
 
@@ -219,6 +231,8 @@ int ftpc_upload(int sockfd, const char *arg, size_t arglen)
 	}
 
 	printf("Upload successful!\n");
+	printf("Total Bytes: %d Transfer Time: %.2f Rate: %.2f\n", 
+			file_size, transfer_secs, file_size / transfer_secs);
 	return 0;
 }
 
