@@ -75,7 +75,8 @@ void parse_command(int sockfd, char *cmd, size_t cmdlen)
 	arg[strlen(arg)-1] = 0;
 
 	// all commands are 3 characters followed by a whitespace char
-	if ((cmd[3] != ' ') && (cmd[3] != '\n')) {
+//	if ((cmd[3] != ' ') && (cmd[3] != '\n')) {
+	if(!isspace(cmd[3]) && strlen(cmd) != 3) {
 		printf("Unknown command: %s", cmd);
 		return;
 	}
