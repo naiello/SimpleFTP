@@ -3,7 +3,7 @@
 
 all: myftpd
 
-myftpd: ftpserver.o
+myftpd: ftpserver.o ../common/timing.o
 	gcc -Wall -lmhash ftpserver.o ../common/timing.o -o myftpd
 
 ftpserver.o: ftpserver.c ../common/timing.h
