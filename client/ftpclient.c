@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 
 	// open a socket on the local machine
 	if ((sockfd = socket(serv_addr->ai_family, serv_addr->ai_socktype, 
-					serv_addr->ai_protocol)) != 0) {
+					serv_addr->ai_protocol)) == 0) {
 		error(3, errno, "Failed to open socket.");
 	}
 
@@ -72,6 +72,7 @@ int main(int argc, char **argv)
 void parse_command(int sockfd, char *cmd, size_t cmdlen) 
 {
 	char *arg = cmd + 4;
+	arg[strlen(arg)-1] = 0;
 
 	// all commands are 3 characters followed by a whitespace char
 	if ((cmd[3] != ' ') && (cmd[3] != '\n')) {
