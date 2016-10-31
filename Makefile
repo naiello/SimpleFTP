@@ -1,4 +1,4 @@
-all: myftp myftpd
+all: client/myftp server/myftpd
 
 myftp: client/ftpclient.o client/client_cmds.o common/timing.o
 	gcc -Wall -lmhash client/ftpclient.o client/client_cmds.o common/timing.o -o myftp
