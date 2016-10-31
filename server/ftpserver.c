@@ -213,7 +213,7 @@ void cmd_upl(int s) {
 	bzero((void*)file_name, sizeof(file_name));
 	bzero((void*)&file_buf, sizeof(file_buf));
 	bzero((void*)file_hash, sizeof(file_hash));
-	bzero((void*)fecv_hash, sizeof(recv_hash));
+	bzero((void*)recv_hash, sizeof(recv_hash));
 
 	// receive length of file name
 	if(read(s, &file_len, sizeof(file_len)) == -1) {
