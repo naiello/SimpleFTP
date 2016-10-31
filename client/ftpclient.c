@@ -1,5 +1,5 @@
 /* Simple FTP Client
- * Authors: Nick Aiello / Rosalyn Tan
+ * Authors: Nick Aiello [naiello] / Rosalyn Tan [rtan]
  * Description: TODO
  */
 
