@@ -459,7 +459,7 @@ int ftpc_delete(int sockfd, const char *arg, size_t arglen)
 		return -2;
 	}
 
-	if (ack_code == -1) {
+	if (ntohs(ack_code) == -1) {
 		fprintf(stderr, "File does not exist on the server.\n");
 		return -3;
 	}
