@@ -334,7 +334,7 @@ int ftpc_rmdir(int sockfd, const char *arg, size_t arglen)
 	int16_t dirname_size = htons((int16_t)arglen);
 	int16_t ack_code = 0;
 	int16_t confirm_code;
-	char confirm_inp[4];
+	char confirm_inp[5];
 
 	// send opcode MKD, directory name length, directory name
 	if ((send(sockfd, &op_code, sizeof(op_code), 0) < 0) ||
@@ -362,17 +362,14 @@ int ftpc_rmdir(int sockfd, const char *arg, size_t arglen)
 		printf("Are you sure you want to delete %s? [Yes/No]: ", arg);
 		fgets(confirm_inp, sizeof(confirm_inp), stdin);
 		
-		// flush stdin to get rid of extra input
-		while ((c = getchar()) != '\n' && c != EOF);
-
 		// convert to upper case
 		for (iter = confirm_inp; *iter != 0; iter++) {
 			*iter = toupper(*iter);
 		}
 
-		if (!strcmp(confirm_inp, "YES")) { 
+		if (!strcmp(confirm_inp, "YES\n")) { 
 			break;
-		} else if (!strcmp(confirm_inp, "NO")) {
+		} else if (!strcmp(confirm_inp, "NO\n")) {
 			fprintf(stderr, "Delete aborted by user.\n");
 			// tell server to abort
 			confirm_code = htons(-1);
@@ -447,7 +444,7 @@ int ftpc_delete(int sockfd, const char *arg, size_t arglen)
 	int16_t dirname_size = htons((int16_t)arglen);
 	int16_t ack_code = 0;
 	int16_t confirm_code;
-	char confirm_inp[4];
+	char confirm_inp[5];
 
 	// send opcode RMD, directory name length, directory name
 	if ((send(sockfd, &op_code, sizeof(op_code), 0) < 0) ||
@@ -472,17 +469,14 @@ int ftpc_delete(int sockfd, const char *arg, size_t arglen)
 		printf("Are you sure you want to delete %s? [Yes/No]: ", arg);
 		fgets(confirm_inp, sizeof(confirm_inp), stdin);
 		
-		// flush stdin to get rid of extra input
-		while ((c = getchar()) != '\n' && c != EOF);
-
 		// convert to upper case
 		for (iter = confirm_inp; iter < (confirm_inp + 3); iter++) {
 			*iter = toupper(*iter);
 		}
 
-		if (!strcmp(confirm_inp, "YES")) { 
+		if (!strcmp(confirm_inp, "YES\n")) { 
 			break;
-		} else if (!strcmp(confirm_inp, "NO")) {
+		} else if (!strcmp(confirm_inp, "NO\n")) {
 			fprintf(stderr, "Delete aborted by user.\n");
 			// tell server to abort
 			confirm_code = htons(-1);
