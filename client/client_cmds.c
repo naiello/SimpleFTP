@@ -34,7 +34,6 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 	char file_hash[16];
 	char recv_hash[16];
 	MHASH hashd;
-	int32_t recv_code;
 	uint32_t file_size;
 	int16_t send_code;
 	FILE *outfd;
@@ -48,19 +47,6 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 	if (send(sockfd, &send_code, sizeof(send_code), 0) < 0) {
 		fprintf(stderr, "Failed to send!\n");
 		return -1;
-	}
-
-	if (recv(sockfd, &recv_code, sizeof(recv_code), 0) < sizeof(recv_code)) {
-		fprintf(stderr, "Corrupt recv!\n");
-		return -2;
-	}
-
-	// is the server able to fulfill request?
-	
-	recv_code = ntohs(recv_code);
-	if (recv_code <= 0) {
-		fprintf(stderr, "Server refused request.\n");
-		return recv_code;
 	}
 
 	// send the size of the file name followed by the file name
@@ -78,7 +64,7 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 		return -4;
 	}
 
-	file_size = ntohs(file_size);
+	file_size = ntohl(file_size);
 	if (file_size < 0) {
 		fprintf(stderr, "File %s does not exist.", arg);
 		return -5;
@@ -126,6 +112,10 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 	// compare hashes to ensure correct transfer
 	if (strncmp(recv_hash, file_hash, 16)) {
 		fprintf(stderr, "Transfer failed (hash mismatch)\n");
+		print_md5(recv_hash);
+		printf("\n");
+		print_md5(file_hash);
+		printf("\n");
 		// TODO: delete output file
 		return -9;
 	}
