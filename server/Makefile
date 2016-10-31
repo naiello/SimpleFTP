@@ -1,3 +1,6 @@
+# Rosalyn Tan, Nick Aiello
+# rtan, naiello
+
 all: myftpd
 
 myftpd: ftpserver.o

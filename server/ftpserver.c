@@ -1,7 +1,6 @@
 /* Simple FTP Server
  * Authors: Rosalyn Tan / Nick Aiello
  * NetIds: rtan / naiello
- * Description: TODO
  */
 
 #include <dirent.h>
