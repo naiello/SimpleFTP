@@ -29,6 +29,7 @@ void cmd_upl(int);
 void cmd_del(int);
 void cmd_lis(int);
 void cmd_mkd(int);
+void cmd_rmd(int);
 
 int main(int argc, char **argv) {
 	struct sockaddr_in sin;
@@ -91,7 +92,7 @@ int main(int argc, char **argv) {
 			} else if(code == htons(CMD_MKD)) {
 				cmd_mkd(new_s);
 			} else if(code == htons(CMD_RMD)) {
-				// RMD code
+				cmd_rmd(new_s);
 			} else if(code == htons(CMD_CHD)) {
 				// CHD code
 			} else if(code == htons(CMD_DEL)) {
@@ -388,12 +389,10 @@ void cmd_lis(int s) {
 void cmd_mkd(int s) {
 	int16_t dname_len;
 	char dir_name[MAX_LINE];
-	struct stat dir_stat;	
 	int16_t confirm;
 
 	// zero buffers
 	bzero((void*)dir_name, sizeof(dir_name));
-	bzero((void*)&dir_stat, sizeof(dir_stat));
 
 	// receive directory name length
 	if(read(s, &dname_len, sizeof(dname_len)) == -1) {
@@ -424,4 +423,67 @@ void cmd_mkd(int s) {
 		return;
 	}
 	return;	
+}
+
+void cmd_rmd(int s) {
+	int16_t dname_len;
+	char dir_name[MAX_LINE];
+	struct stat dir_stat;
+	int16_t confirm;
+	int dexists = 1;
+	char user_conf[MAX_LINE];
+
+	// zero buffers
+	bzero((void*)dir_name, sizeof(dir_name));
+	bzero((void*)&dir_stat, sizeof(dir_name));
+	bzero((void*)user_conf, sizeof(user_conf));
+
+	// receive directory name length
+	if(read(s, &dname_len, sizeof(dname_len)) == -1) {
+		perror("Receive file name length error");
+		return;
+	}
+	dname_len = ntohs(dname_len);
+
+	// receive directory name
+	if(read(s, dir_name, dname_len) == -1) {
+		perror("Receive file name error");
+		return;
+	}
+	
+	// check directory for existence
+	if(stat(dir_name, &dir_stat) == 0) {
+		// send positive confirm
+		confirm = htons(1);
+	} else {
+		// send negative confirm
+		confirm = htons(-1);
+		dexists = 0;
+	}
+	if(write(s, &confirm, sizeof(confirm)) == -1) {
+		perror("Send confirm error");
+		return;
+	}
+	if(dexists == 0) {
+		return;
+	}
+	if(read(s, user_conf, MAX_LINE) == -1) {
+		perror("Receive confirm error");
+		return;
+	}
+	if(!strcmp(user_conf, "YES")) {
+		// delete code
+		if(rmdir(dir_name) == 0) {
+			confirm = htons(1);
+		} else {
+			confirm = htons(-1);
+		}
+		if(write(s, &confirm, sizeof(confirm)) == -1) {
+			perror("Send confirm error");
+			return;
+		}
+	} else if(!strcmp(user_conf, "NO")) {
+		return;
+	}
+	return;
 }
