@@ -360,13 +360,13 @@ int ftpc_rmdir(int sockfd, const char *arg, size_t arglen)
 	char c, *iter;
 	while (1) {
 		printf("Are you sure you want to delete %s? [Yes/No]: ", arg);
-		fgets(confirm_inp, sizeof(confirm_inp), stdout);
+		fgets(confirm_inp, sizeof(confirm_inp), stdin);
 		
 		// flush stdin to get rid of extra input
 		while ((c = getchar()) != '\n' && c != EOF);
 
 		// convert to upper case
-		for (iter = confirm_inp; iter < (confirm_inp + 3); iter++) {
+		for (iter = confirm_inp; *iter != 0; iter++) {
 			*iter = toupper(*iter);
 		}
 
@@ -469,7 +469,7 @@ int ftpc_delete(int sockfd, const char *arg, size_t arglen)
 	char c, *iter;
 	while (1) {
 		printf("Are you sure you want to delete %s? [Yes/No]: ", arg);
-		fgets(confirm_inp, sizeof(confirm_inp), stdout);
+		fgets(confirm_inp, sizeof(confirm_inp), stdin);
 		
 		// flush stdin to get rid of extra input
 		while ((c = getchar()) != '\n' && c != EOF);
@@ -507,6 +507,6 @@ int ftpc_delete(int sockfd, const char *arg, size_t arglen)
 		return -7;
 	}
 
-	printf("Directory deleted.\n");
+	printf("File deleted.\n");
 	return 0;
 }
