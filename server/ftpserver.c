@@ -20,7 +20,6 @@
 #include "../common/cmd_defs.h"
 #include "../common/timing.h"
 
-#define SERVER_PORT 41001 // or 41002
 #define MAX_LINE 4096 // may need to change
 #define MAX_PENDING 5
 
@@ -30,6 +29,7 @@ void cmd_del(int);
 void cmd_lis(int);
 void cmd_mkd(int);
 void cmd_rmd(int);
+void cmd_chd(int);
 
 int main(int argc, char **argv) {
 	struct sockaddr_in sin;
@@ -38,11 +38,16 @@ int main(int argc, char **argv) {
 	int opt = 0;
 	int16_t code;
 
+	if(argc != 2) {
+		printf("Usage: myftpd <port number>\n");
+		exit(1);
+	}
+
 	// build address data structure
 	bzero((char*)&sin, sizeof(sin));
 	sin.sin_family = AF_UNSPEC;
 	sin.sin_addr.s_addr = INADDR_ANY;
-	sin.sin_port = htons(SERVER_PORT);
+	sin.sin_port = htons(atoi(argv[1]));
 
 	// create socket
 	if((s = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
@@ -94,7 +99,7 @@ int main(int argc, char **argv) {
 			} else if(code == htons(CMD_RMD)) {
 				cmd_rmd(new_s);
 			} else if(code == htons(CMD_CHD)) {
-				// CHD code
+				cmd_chd(new_s);
 			} else if(code == htons(CMD_DEL)) {
 				cmd_del(new_s);
 			} else if(code == htons(CMD_XIT)) {
@@ -483,6 +488,49 @@ void cmd_rmd(int s) {
 			return;
 		}
 	} else if(!strcmp(user_conf, "NO")) {
+		return;
+	}
+	return;
+}
+
+void cmd_chd(int s) {
+	int16_t dname_len;
+	char dir_name[MAX_LINE];
+	struct stat dir_stat;
+	int16_t confirm;
+
+	// zero buffers
+	bzero((void*)dir_name, sizeof(dir_name));
+	bzero((void*)&dir_stat, sizeof(dir_stat));
+
+	// receive directory name length
+	if(read(s, &dname_len, sizeof(dname_len)) == -1) {
+		perror("Receive file name length error");
+		return;
+	}
+	dname_len = ntohs(dname_len);
+
+	// receive directory name
+	if(read(s, dir_name, dname_len) == -1) {
+		perror("Receive file name error");
+		return;
+	}
+	
+	// check directory for existence
+	if(stat(dir_name, &dir_stat) == 0) {
+		// change directories
+		if(chdir(dir_name) == 0) {
+			// send positive confirm
+			confirm = htons(1);
+		} else {
+			confirm = htons(-1);
+		}
+	} else {
+		// send negative confirm
+		confirm = htons(-2);
+	}
+	if(write(s, &confirm, sizeof(confirm)) == -1) {
+		perror("Send confirm error");
 		return;
 	}
 	return;
