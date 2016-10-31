@@ -1,10 +1,10 @@
 all: client/myftp server/myftpd
 
 client/myftp: client/ftpclient.o client/client_cmds.o common/timing.o
-	gcc -Wall -lmhash client/ftpclient.o client/client_cmds.o common/timing.o -o myftp
+	gcc -Wall -lmhash client/ftpclient.o client/client_cmds.o common/timing.o -o client/myftp
 
 server/myftpd: server/ftpserver.o
-	gcc -Wall -lmhash server/ftpserver.o common/timing.o -o myftpd
+	gcc -Wall -lmhash server/ftpserver.o common/timing.o -o server/myftpd
 
 client/ftpclient.o: client/ftpclient.c client/client_cmds.h common/cmd_defs.h
 	gcc -Wall -c client/ftpclient.c -o client/ftpclient.o
