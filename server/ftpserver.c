@@ -303,7 +303,7 @@ void cmd_del(int s) {
 	int ack;
 	struct stat file_stat;
 	int fexists = 1;
-	char confirm[MAX_LINE];
+	int16_t confirm = 0;
 
 	// zero buffers	
 	bzero((void*)file_name, sizeof(file_name));
@@ -338,13 +338,13 @@ void cmd_del(int s) {
 	}
 	
 	// receive confirm from client
-	if(read(s, confirm, MAX_LINE) == -1) {
+	if(read(s, &confirm, sizeof(confirm)) == -1) {
 		perror("Receive confirm code error");
 		return;
 	}
-	if(!strcmp(confirm, "NO")) {
+	if(confirm < 0) {
 		return;
-	} else if(!strcmp(confirm, "YES")) {
+	} else if(confirm > 0) {
 		// delete file and send confirmation
 		if(remove(file_name) == -1) {
 			perror("Delete file failed");
