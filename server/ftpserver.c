@@ -250,6 +250,12 @@ void cmd_upl(int s) {
 		return;
 	}
 
+	// receive MD5 hash
+	if(read(s, file_hash, sizeof(file_hash)) == -1) {
+		perror("Receive hash error");
+		return;
+	}	
+
 	tic();
 	// receive file
 	while(counter < file_size) {
@@ -263,12 +269,6 @@ void cmd_upl(int s) {
 	}
 	trans_time = toc();
 	trans_time = trans_time / 1000000;
-
-	// receive MD5 hash
-	if(read(s, file_hash, sizeof(file_hash)) == -1) {
-		perror("Receive hash error");
-		return;
-	}	
 
 	mhash_deinit(hashd, recv_hash);
 	fclose(fp);
