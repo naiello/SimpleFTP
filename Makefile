@@ -20,4 +20,4 @@ common/timing.o: common/timing.c
 
 .PHONY: clean
 clean:
-	rm -f client/*.o server/*.o common/*.o myftp myftpd
+	rm -f client/*.o server/*.o common/*.o client/myftp server/myftpd

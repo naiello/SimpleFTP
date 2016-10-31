@@ -5,6 +5,7 @@
  */
 
 #include <dirent.h>
+#include <errno.h>
 #include <mhash.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -351,8 +352,30 @@ void cmd_del(int s) {
 }
 
 void cmd_lis(int s) {
-	DIR *dir;
-	struct dirent* dir_list;
+	DIR *d;
+	struct dirent* dir;
+	char dir_list[MAX_LINE];
+	errno = 0;
+	int32_t list_size;
 
-	if(readdir)	
+	// zero buffers
+	bzero((void*)&dir, sizeof(dir));
+	bzero((void*)dir_list, sizeof(dir_list));
+
+	d = opendir("."); // error handling?
+
+	while((dir = readdir(d)) != NULL) {
+		strcat(dir_list, dir->d_name);
+	}
+	if(errno != 0) {
+		perror("Directory listing retrieval error");
+		return;
+	}
+
+	list_size = sizeof(dir_list); // is this correct?
+	list_size = htonl(list_size);
+	if(write(s, &list_size, sizeof(list_size)) == -1) {
+		perror("Send listing size error");
+	}
+	return;
 }
