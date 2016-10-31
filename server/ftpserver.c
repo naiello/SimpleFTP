@@ -143,14 +143,14 @@ void cmd_req(int s) {
 	if(stat(file_name, &file_stat) == 0) {
 		// send size
 		file_size = (int32_t)file_stat.st_size;
-		file_size = htons(file_size);
+		file_size = htonl(file_size);
 		if(write(s, &file_size, sizeof(int32_t)) == -1) {
 			perror("File size send error");
 			return;
 		}
 	} else {
 		// send -1
-		file_size = htons(-1);
+		file_size = htonl(-1);
 		if(write(s, &file_size, sizeof(int32_t)) == -1) {
 			perror("File does not exist error");
 			return;
@@ -208,12 +208,19 @@ void cmd_upl(int s) {
 	char recv_hash[16];
 	MHASH hashd;
 	unsigned long trans_time;
+	
+	//  zero buffers
+	bzero((void*)file_name, sizeof(file_name));
+	bzero((void*)&file_buf, sizeof(file_buf));
+	bzero((void*)file_hash, sizeof(file_hash));
+	bzero((void*)fecv_hash, sizeof(recv_hash));
 
 	// receive length of file name
 	if(read(s, &file_len, sizeof(file_len)) == -1) {
 		perror("Receive file length error");
 		return;
 	}
+	file_len = ntohs(file_len);
 
 	// receive file name
 	if(read(s, file_name, file_len) == -1) {
@@ -224,7 +231,7 @@ void cmd_upl(int s) {
 	fp = fopen(file_name, "w+");
 
 	// send ACK
-	ack = 1;
+	ack = htons(1);
 	if(write(s, &ack, sizeof(ack)) == -1) {
 		perror("Send ack failed");
 		return;
@@ -235,6 +242,7 @@ void cmd_upl(int s) {
 		perror("Receive file size error");
 		return;
 	}
+	file_size = ntohl(file_size);
 
 	// init hash
 	if((hashd = mhash_init(MHASH_MD5)) == MHASH_FAILED) {
@@ -280,5 +288,38 @@ void cmd_upl(int s) {
 }
 
 void cmd_del(int s) {
+	int16_t fname_len;
+	char file_name[MAX_LINE];
+	int ack;
+	int fexists = 1;
 
+	// zero buffers	
+	bzero((void*)file_name, sizeof(file_name));
+
+	if(read(s, &fname_len, sizeof(fname_len)) == -1) {
+		perror("Receive file name length error");
+		return;
+	}
+	if(read(s, &fname_len, sizeof(file_name)) == -1) {
+		perror("Receive file name error");
+		return;
+	}
+
+	// check if file exists
+	if(stat(file_name, &file_stat) == 0) {
+		// send 1 to positive confirm
+		ack = htons(1);
+	} else {
+		// send -1 to negative confirm
+		ack = htons(-1);
+		fexists = 0;
+	}
+	if(write(s, &ack, sizeof(ack)) == -1) {
+		perror("Send confirmation error");
+		return;
+	}
+	if(fexists == 0) {
+		return;
+	}
+	
 }
