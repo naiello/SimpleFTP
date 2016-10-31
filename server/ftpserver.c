@@ -360,7 +360,6 @@ void cmd_del(int s) {
 	}
 }
 
-// TODO: send over actual listing
 void cmd_lis(int s) {
 	DIR *d;
 	struct dirent* dir;
@@ -376,6 +375,7 @@ void cmd_lis(int s) {
 
 	while((dir = readdir(d)) != NULL) {
 		strcat(dir_list, dir->d_name);
+		strcat(dir_list, "\n");
 	}
 	closedir(d);
 	if(errno != 0) {
@@ -387,6 +387,11 @@ void cmd_lis(int s) {
 	list_size = htonl(list_size);
 	if(write(s, &list_size, sizeof(list_size)) == -1) {
 		perror("Send listing size error");
+		return;
+	}
+	if(write(s, dir_list, list_size) == -1) {
+		perror("Send listing error");
+		return;
 	}
 	return;
 }
