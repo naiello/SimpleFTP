@@ -13,7 +13,7 @@
 
 #include "../common/cmd_defs.h"
 #include "client_cmds.h"
-#include "timing.h"
+#include "../common/timing.h"
 
 #define RECV_BUF_SZ 4096
 #define SEND_BUF_SZ 4096

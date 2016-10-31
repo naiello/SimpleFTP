@@ -1,5 +1,6 @@
 /* Simple FTP Server
  * Authors: Rosalyn Tan / Nick Aiello
+ * NetIds: rtan / naiello
  * Description: TODO
  */
 
@@ -15,22 +16,26 @@
 #include <unistd.h>
 
 #include "../common/cmd_defs.h"
+#include "../common/timing.h"
 
 #define SERVER_PORT 41001 // or 41002
-#define BUF_SIZE 256 // may need to change
+#define MAX_LINE 256 // may need to change
 #define MAX_PENDING 5
 
 void cmd_req(int);
+void cmd_upl(int);
+void cmd_del(int);
 
 int main(int argc, char **argv) {
 	struct sockaddr_in sin;
-	char buf[BUF_SIZE];
-	int len;
+	char buf[MAX_LINE];
+	unsigned int len;
 	int s, new_s;
+	int opt = 0;
 
 	// build address data structure
 	bzero((char*)&sin, sizeof(sin));
-	sin.sin_family = AF_INET;
+	sin.sin_family = AF_UNSPEC;
 	sin.sin_addr.s_addr = INADDR_ANY;
 	sin.sin_port = htons(SERVER_PORT);
 
@@ -41,7 +46,7 @@ int main(int argc, char **argv) {
 	}
 
 	// set socket option
-	if((setsockopt(s, SOL_SOCKET, SO_REUSEADDR, 0, sizeof(int))) < 0) {
+	if((setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(int))) < 0) {
 		perror("Set socket option failed");
 		exit(1);
 	}
@@ -77,7 +82,7 @@ int main(int argc, char **argv) {
 			if(!strcmp(buf, CMDSTR_REQ)) {
 				cmd_req(new_s);
 			} else if(!strcmp(buf, CMDSTR_UPL)) {
-				// UPL code
+				cmd_upl(new_s);
 			} else if(!strcmp(buf, CMDSTR_LIS)) {
 				// LIS code
 			} else if(!strcmp(buf, CMDSTR_MKD)) {
@@ -87,7 +92,7 @@ int main(int argc, char **argv) {
 			} else if(!strcmp(buf, CMDSTR_CHD)) {
 				// CHD code
 			} else if(!strcmp(buf, CMDSTR_DEL)) {
-				// DEL code
+				cmd_del(new_s);
 			} else if(!strcmp(buf, CMDSTR_XIT)) {
 				break;
 			} else {
@@ -100,17 +105,17 @@ int main(int argc, char **argv) {
 
 void cmd_req(int s) {
 	int16_t file_len;
-	char file_name[BUF_SIZE];
+	char file_name[MAX_LINE];
 	struct stat file_stat;
 	int32_t file_size;
 	MHASH hashd;
 	FILE *fp;
 	char hash_buf[16];
-	char file_buf[BUF_SIZE];
+	char file_buf[MAX_LINE];
 	int count;
 	int len;
 
-	// need to zero buffers
+	// zero buffers
 	bzero((void*)file_name, sizeof(file_name));
 	bzero((void*)&file_stat, sizeof(file_stat));
 	bzero((void*)hash_buf, sizeof(hash_buf));
@@ -160,7 +165,7 @@ void cmd_req(int s) {
 
 	// compute hash
 	fp = fopen(file_name, "r"); // need error handling?
-	while(count = fread(file_buf, 1, BUF_SIZE, fp) == BUF_SIZE) {
+	while((count = fread(file_buf, 1, MAX_LINE, fp)) == MAX_LINE) {
 		mhash(hashd, file_buf, count);
 	}
 	// hash last chunk of file
@@ -173,8 +178,10 @@ void cmd_req(int s) {
 		return;
 	}
 	
+	rewind(fp);
+
 	// send file to client
-	while(count = fread(file_buf, 1, BUF_SIZE, fp) == BUF_SIZE) {
+	while((count = fread(file_buf, 1, MAX_LINE, fp)) == MAX_LINE) {
 		if(write(s, file_buf, count) == -1) {
 			perror("File send error");
 			return;
@@ -185,4 +192,93 @@ void cmd_req(int s) {
 		perror("File send error");
 		return;
 	}
+	fclose(fp);
+}
+
+void cmd_upl(int s) {
+	int16_t ack;
+	int16_t file_len;
+	char file_name[MAX_LINE];
+	char file_buf[MAX_LINE];
+	int32_t file_size;
+	int32_t counter = 0;
+	int32_t file_read;
+	FILE* fp;
+	char file_hash[16];
+	char recv_hash[16];
+	MHASH hashd;
+	unsigned long trans_time;
+
+	// receive length of file name
+	if(read(s, &file_len, sizeof(file_len)) == -1) {
+		perror("Receive file length error");
+		return;
+	}
+
+	// receive file name
+	if(read(s, file_name, file_len) == -1) {
+		perror("Receive file name error");
+		return;
+	}
+
+	fp = fopen(file_name, "w+");
+
+	// send ACK
+	ack = 1;
+	if(write(s, &ack, sizeof(ack)) == -1) {
+		perror("Send ack failed");
+		return;
+	} 
+	
+	// receive file size
+	if(read(s, &file_size, sizeof(file_size)) == -1) {
+		perror("Receive file size error");
+		return;
+	}
+
+	// init hash
+	if((hashd = mhash_init(MHASH_MD5)) == MHASH_FAILED) {
+		perror("Init hash failed");
+		return;
+	}
+
+	tic();
+	// receive file
+	while(counter < file_size) {
+		if((file_read = read(s, file_buf, MAX_LINE)) == -1) {
+			perror("Receive file error");
+			return;
+		}
+		mhash(hashd, file_buf, file_read);
+		fwrite(file_buf, 1, file_read, fp); // error handling
+		counter += file_read;
+	}
+	trans_time = toc();
+	trans_time = trans_time / 1000000;
+
+	// receive MD5 hash
+	if(read(s, file_hash, sizeof(file_hash)) == -1) {
+		perror("Receive hash error");
+		return;
+	}	
+
+	mhash_deinit(hashd, recv_hash);
+	fclose(fp);
+	
+	// unsuccessful transfer--mismatched hashes
+	if(strcmp(file_hash, recv_hash)) {
+		perror("Mismatched hashes");
+		// TODO: delete output file
+		return;
+	// successful transfer
+	} else {
+		if(write(s, &trans_time, sizeof(trans_time)) == -1) {
+			perror("Send throughput error");
+		}
+		return;
+	}
+}
+
+void cmd_del(int s) {
+
 }
