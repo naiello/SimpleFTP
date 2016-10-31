@@ -1,6 +1,5 @@
 /* Simple FTP Client
  * Authors: Nick Aiello [naiello] / Rosalyn Tan [rtan]
- * Description: TODO
  */
 
 #include <ctype.h>

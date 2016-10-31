@@ -1,3 +1,5 @@
+# Nick Aiello [naiello], Rosalyn Tan [rtan]
+
 all: myftp
 
 myftp: ftpclient.o client_cmds.o ../common/timing.o

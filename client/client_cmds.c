@@ -1,3 +1,7 @@
+/* Nick Aiello, Rosalyn Tan
+ * naiello, rtan
+ */
+
 #include <ctype.h>
 #include <error.h>
 #include <errno.h>
