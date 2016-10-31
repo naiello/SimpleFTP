@@ -4,6 +4,7 @@
  * Description: TODO
  */
 
+#include <dirent.h>
 #include <mhash.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -211,7 +212,7 @@ void cmd_upl(int s) {
 	
 	//  zero buffers
 	bzero((void*)file_name, sizeof(file_name));
-	bzero((void*)&file_buf, sizeof(file_buf));
+	bzero((void*)file_buf, sizeof(file_buf));
 	bzero((void*)file_hash, sizeof(file_hash));
 	bzero((void*)recv_hash, sizeof(recv_hash));
 
@@ -266,6 +267,7 @@ void cmd_upl(int s) {
 		mhash(hashd, file_buf, file_read);
 		fwrite(file_buf, 1, file_read, fp); // error handling
 		counter += file_read;
+		bzero((void*)file_buf, sizeof(file_buf));
 	}
 	trans_time = toc();
 	trans_time = trans_time / 1000000;
@@ -349,5 +351,8 @@ void cmd_del(int s) {
 }
 
 void cmd_lis(int s) {
+	DIR *dir;
+	struct dirent* dir_list;
 
+	if(readdir)	
 }
