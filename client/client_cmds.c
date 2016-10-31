@@ -117,6 +117,7 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 		print_md5(file_hash);
 		printf("\n");
 		// TODO: delete output file
+		unlink(arg);
 		return -9;
 	}
 
