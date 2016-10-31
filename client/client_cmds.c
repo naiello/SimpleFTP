@@ -34,7 +34,7 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 	char file_hash[16];
 	char recv_hash[16];
 	MHASH hashd;
-	uint32_t file_size;
+	int32_t file_size;
 	int16_t send_code;
 	FILE *outfd;
 	size_t recv_counter = 0;
@@ -357,7 +357,7 @@ int ftpc_rmdir(int sockfd, const char *arg, size_t arglen)
 		return -3;
 	}
 
-	char c, *iter;
+	char *iter;
 	while (1) {
 		printf("Are you sure you want to delete %s? [Yes/No]: ", arg);
 		fgets(confirm_inp, sizeof(confirm_inp), stdin);
@@ -464,7 +464,7 @@ int ftpc_delete(int sockfd, const char *arg, size_t arglen)
 		return -3;
 	}
 
-	char c, *iter;
+	char *iter;
 	while (1) {
 		printf("Are you sure you want to delete %s? [Yes/No]: ", arg);
 		fgets(confirm_inp, sizeof(confirm_inp), stdin);

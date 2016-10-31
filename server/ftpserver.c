@@ -161,9 +161,11 @@ void cmd_req(int s) {
 		// send -1
 		file_size = htonl(-1);
 		if(write(s, &file_size, sizeof(int32_t)) == -1) {
-			perror("File does not exist error");
+			perror("NAK error");
 			return;
 		}
+		perror("File does not exist!");
+		return;
 	}
 
 	// init hash
