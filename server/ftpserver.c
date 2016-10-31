@@ -436,12 +436,11 @@ void cmd_rmd(int s) {
 	struct stat dir_stat;
 	int16_t confirm;
 	int dexists = 1;
-	char user_conf[MAX_LINE];
+	int16_t user_conf = 0;
 
 	// zero buffers
 	bzero((void*)dir_name, sizeof(dir_name));
 	bzero((void*)&dir_stat, sizeof(dir_name));
-	bzero((void*)user_conf, sizeof(user_conf));
 
 	// receive directory name length
 	if(read(s, &dname_len, sizeof(dname_len)) == -1) {
@@ -472,11 +471,11 @@ void cmd_rmd(int s) {
 	if(dexists == 0) {
 		return;
 	}
-	if(read(s, user_conf, MAX_LINE) == -1) {
+	if(read(s, &user_conf, sizeof(user_conf)) == -1) {
 		perror("Receive confirm error");
 		return;
 	}
-	if(!strcmp(user_conf, "YES")) {
+	if(ntohs(user_conf) > 0) {
 		// delete code
 		if(rmdir(dir_name) == 0) {
 			confirm = htons(1);
@@ -487,8 +486,10 @@ void cmd_rmd(int s) {
 			perror("Send confirm error");
 			return;
 		}
-	} else if(!strcmp(user_conf, "NO")) {
+	} else if(ntohs(user_conf) < 0) {
 		return;
+	} else {
+		perror("invalid confirm");
 	}
 	return;
 }
