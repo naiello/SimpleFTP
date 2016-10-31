@@ -175,6 +175,12 @@ int ftpc_upload(int sockfd, const char *arg, size_t arglen)
 		return -2;
 	}
 
+	// send file size
+	if (send(sockfd, &file_size, sizeof(file_size), 0) < 0) {
+		fprintf(stderr, "Failed to send file size\n");
+		return -2;
+	}
+
 	// init mhash
 	if ((hashd = mhash_init(MHASH_MD5)) == MHASH_FAILED) {
 		fprintf(stderr, "Failed to init mhash.\n");
@@ -183,8 +189,8 @@ int ftpc_upload(int sockfd, const char *arg, size_t arglen)
 
 	// compute md5 hash of the file
 	infd = fopen(arg, "r");
+	memset(send_buf, 0, sizeof(send_buf));
 	while (send_counter < file_size) {
-		memset(send_buf, 0, sizeof(send_buf));
 		if ((read_current = fread(send_buf, sizeof(char), 
 						sizeof(send_buf), infd)) < 0) {
 			fprintf(stderr, "Bad read.\n");
