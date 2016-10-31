@@ -286,7 +286,7 @@ void cmd_upl(int s) {
 	// unsuccessful transfer--mismatched hashes
 	if(strncmp(file_hash, recv_hash, sizeof(file_hash))) {
 		perror("Mismatched hashes");
-		// TODO: delete output file
+		remove(file_name);
 		return;
 	// successful transfer
 	} else {
