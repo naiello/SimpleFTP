@@ -291,16 +291,19 @@ void cmd_del(int s) {
 	int16_t fname_len;
 	char file_name[MAX_LINE];
 	int ack;
+	struct stat file_stat;
 	int fexists = 1;
+	char confirm[MAX_LINE];
 
 	// zero buffers	
 	bzero((void*)file_name, sizeof(file_name));
+	bzero((void*)file_stat, sizeof(file_stat));
 
 	if(read(s, &fname_len, sizeof(fname_len)) == -1) {
 		perror("Receive file name length error");
 		return;
 	}
-	if(read(s, &fname_len, sizeof(file_name)) == -1) {
+	if(read(s, &file_name, sizeof(file_name)) == -1) {
 		perror("Receive file name error");
 		return;
 	}
@@ -322,4 +325,25 @@ void cmd_del(int s) {
 		return;
 	}
 	
+	// receive confirm from client
+	if(read(s, confirm, MAX_LINE) == -1) {
+		perror("Receive confirm code error");
+		return;
+	}
+	if(!strcmp(confirm, "NO")) {
+		return;
+	} else if(!strcmp(confirm, "YES")) {
+		// delete file and send confirmation
+		if(remove(file_name) == -1) {
+			perror("Delete file failed");
+			return;
+		}
+		if(write(s, &ack, sizeof(ack)) == -1) {
+			perror("Send confirmation error");
+			return;
+		}
+	} else {
+		perror("Invalid confirmation code");
+		return;
+	}
 }
