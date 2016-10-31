@@ -25,6 +25,7 @@
 void cmd_req(int);
 void cmd_upl(int);
 void cmd_del(int);
+void cmd_lis(int);
 
 int main(int argc, char **argv) {
 	struct sockaddr_in sin;
@@ -83,7 +84,7 @@ int main(int argc, char **argv) {
 			} else if(code == htons(CMD_UPL)) {
 				cmd_upl(new_s);
 			} else if(code == htons(CMD_LIS)) {
-				// LIS code
+				cmd_lis(new_s);
 			} else if(code == htons(CMD_MKD)) {
 				// MKD code
 			} else if(code == htons(CMD_RMD)) {
@@ -345,4 +346,8 @@ void cmd_del(int s) {
 		perror("Invalid confirmation code");
 		return;
 	}
+}
+
+void cmd_lis(int s) {
+
 }
