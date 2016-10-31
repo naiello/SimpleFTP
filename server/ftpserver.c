@@ -300,7 +300,7 @@ void cmd_upl(int s) {
 void cmd_del(int s) {
 	int16_t fname_len;
 	char file_name[MAX_LINE];
-	int ack;
+	int16_t ack;
 	struct stat file_stat;
 	int fexists = 1;
 	int16_t confirm = 0;
