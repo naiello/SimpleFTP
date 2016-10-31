@@ -311,6 +311,7 @@ int ftpc_mkdir(int sockfd, const char *arg, size_t arglen)
 		fprintf(stderr, "No ACK from server.");
 		return -4;
 	}
+	ack_code = ntohs(ack_code);
 
 	switch (ack_code) {
 		case 1:
