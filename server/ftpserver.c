@@ -28,6 +28,7 @@ void cmd_req(int);
 void cmd_upl(int);
 void cmd_del(int);
 void cmd_lis(int);
+void cmd_mkd(int);
 
 int main(int argc, char **argv) {
 	struct sockaddr_in sin;
@@ -88,7 +89,7 @@ int main(int argc, char **argv) {
 			} else if(code == htons(CMD_LIS)) {
 				cmd_lis(new_s);
 			} else if(code == htons(CMD_MKD)) {
-				// MKD code
+				cmd_mkd(new_s);
 			} else if(code == htons(CMD_RMD)) {
 				// RMD code
 			} else if(code == htons(CMD_CHD)) {
@@ -306,7 +307,9 @@ void cmd_del(int s) {
 		perror("Receive file name length error");
 		return;
 	}
-	if(read(s, &file_name, sizeof(file_name)) == -1) {
+	fname_len = ntohs(fname_len);
+	
+	if(read(s, file_name, fname_len) == -1) {
 		perror("Receive file name error");
 		return;
 	}
@@ -351,6 +354,7 @@ void cmd_del(int s) {
 	}
 }
 
+// TODO: send over actual listing
 void cmd_lis(int s) {
 	DIR *d;
 	struct dirent* dir;
@@ -367,6 +371,7 @@ void cmd_lis(int s) {
 	while((dir = readdir(d)) != NULL) {
 		strcat(dir_list, dir->d_name);
 	}
+	closedir(d);
 	if(errno != 0) {
 		perror("Directory listing retrieval error");
 		return;
@@ -378,4 +383,45 @@ void cmd_lis(int s) {
 		perror("Send listing size error");
 	}
 	return;
+}
+
+void cmd_mkd(int s) {
+	int16_t dname_len;
+	char dir_name[MAX_LINE];
+	struct stat dir_stat;	
+	int16_t confirm;
+
+	// zero buffers
+	bzero((void*)dir_name, sizeof(dir_name));
+	bzero((void*)&dir_stat, sizeof(dir_stat));
+
+	// receive directory name length
+	if(read(s, &dname_len, sizeof(dname_len)) == -1) {
+		perror("Receive directory name length error");
+		return;
+	}
+	dname_len = ntohs(dname_len);
+
+	// receive directory name
+	if(read(s, dir_name, dname_len) == -1 ) {
+		perror("Receive directory  name error");
+		return;
+	}
+
+	// check directory existence
+	if(mkdir(dir_name, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0) {
+		// send positive 1 confirm
+		confirm = htons(1);
+	} else if(errno == EEXIST) {
+		// send negative -2 confirm
+		confirm = htons(-2);
+	} else {
+		// send negative -1 confirm
+		confirm = htons(-1);
+	}
+	if(write(s, &confirm, sizeof(confirm)) == -1) {
+		perror("Send confirm failed");
+		return;
+	}
+	return;	
 }
