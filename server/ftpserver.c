@@ -19,7 +19,7 @@
 #include "../common/timing.h"
 
 #define SERVER_PORT 41001 // or 41002
-#define MAX_LINE 256 // may need to change
+#define MAX_LINE 4096 // may need to change
 #define MAX_PENDING 5
 
 void cmd_req(int);
