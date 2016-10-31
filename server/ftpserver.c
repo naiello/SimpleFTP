@@ -28,10 +28,10 @@ void cmd_del(int);
 
 int main(int argc, char **argv) {
 	struct sockaddr_in sin;
-	char buf[MAX_LINE];
 	unsigned int len;
 	int s, new_s;
 	int opt = 0;
+	int16_t code;
 
 	// build address data structure
 	bzero((char*)&sin, sizeof(sin));
@@ -70,8 +70,7 @@ int main(int argc, char **argv) {
 			continue;
 		}
 		while(1) {
-			bzero((void*)&buf, sizeof(buf));
-			if((len=recv(new_s, buf, sizeof(buf), 0)) == -1) {
+			if((len=recv(new_s, &code, sizeof(code), 0)) == -1) {
 				perror("Server receive failed");
 				continue;
 			}
@@ -79,21 +78,21 @@ int main(int argc, char **argv) {
 			if(len == 0) {
 				break;
 			}
-			if(!strcmp(buf, CMDSTR_REQ)) {
+			if(code == htons(CMD_REQ)) {
 				cmd_req(new_s);
-			} else if(!strcmp(buf, CMDSTR_UPL)) {
+			} else if(code == htons(CMD_UPL)) {
 				cmd_upl(new_s);
-			} else if(!strcmp(buf, CMDSTR_LIS)) {
+			} else if(code == htons(CMD_LIS)) {
 				// LIS code
-			} else if(!strcmp(buf, CMDSTR_MKD)) {
+			} else if(code == htons(CMD_MKD)) {
 				// MKD code
-			} else if(!strcmp(buf, CMDSTR_RMD)) {
+			} else if(code == htons(CMD_RMD)) {
 				// RMD code
-			} else if(!strcmp(buf, CMDSTR_CHD)) {
+			} else if(code == htons(CMD_CHD)) {
 				// CHD code
-			} else if(!strcmp(buf, CMDSTR_DEL)) {
+			} else if(code == htons(CMD_DEL)) {
 				cmd_del(new_s);
-			} else if(!strcmp(buf, CMDSTR_XIT)) {
+			} else if(code == htons(CMD_XIT)) {
 				break;
 			} else {
 				continue;
@@ -297,7 +296,7 @@ void cmd_del(int s) {
 
 	// zero buffers	
 	bzero((void*)file_name, sizeof(file_name));
-	bzero((void*)file_stat, sizeof(file_stat));
+	bzero((void*)&file_stat, sizeof(file_stat));
 
 	if(read(s, &fname_len, sizeof(fname_len)) == -1) {
 		perror("Receive file name length error");
