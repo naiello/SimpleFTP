@@ -21,9 +21,10 @@
 // Helper function to print a MD5 hash to stdout
 static void print_md5(const char *hash)
 {
+	const unsigned char *uhash = (const unsigned char *)hash;
 	int i;
-	for (i = 0; i < mhash_get_block_size(MHASH_MD5); i++) {
-		printf("%.2x", hash[i]);
+	for (i = 0; i < 16; i++) {
+		printf("%02x", uhash[i]);
 	}
 }
 
@@ -34,7 +35,7 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 	char recv_hash[16];
 	MHASH hashd;
 	int32_t recv_code;
-	int32_t file_size;
+	uint32_t file_size;
 	int16_t send_code;
 	FILE *outfd;
 	size_t recv_counter = 0;
@@ -123,7 +124,7 @@ int ftpc_request(int sockfd, const char *arg, size_t arglen)
 	fclose(outfd);
 
 	// compare hashes to ensure correct transfer
-	if (strcmp(recv_hash, file_hash)) {
+	if (strncmp(recv_hash, file_hash, 16)) {
 		fprintf(stderr, "Transfer failed (hash mismatch)\n");
 		// TODO: delete output file
 		return -9;
@@ -148,17 +149,18 @@ int ftpc_upload(int sockfd, const char *arg, size_t arglen)
 	struct stat file_info;
 	char send_buf[SEND_BUF_SZ];
 	char hash_buf[16];
-	int32_t file_size;
-	size_t send_counter, read_current, send_current;
+	uint32_t file_size;
+	size_t send_counter = 0, read_current, send_current;
 	unsigned long transfer_time;
 	double transfer_secs;
 
+	memset(&file_info, 0, sizeof(struct stat));
 	// make sure file exists
 	if (stat(arg, &file_info) < 0) {
 		fprintf(stderr, "Couldn't stat %s: %s\n", arg, strerror(errno));
 		return -4;
 	}
-	file_size = htonl((int32_t)file_info.st_size);
+	file_size = htonl((uint32_t)file_info.st_size);
 	
 	// send operation, file name length and file name to server
 	if (send(sockfd, &op_code, sizeof(op_code), 0) < 0 ||
@@ -180,6 +182,7 @@ int ftpc_upload(int sockfd, const char *arg, size_t arglen)
 		fprintf(stderr, "Failed to send file size\n");
 		return -2;
 	}
+	file_size = ntohl(file_size);
 
 	// init mhash
 	if ((hashd = mhash_init(MHASH_MD5)) == MHASH_FAILED) {
@@ -189,8 +192,8 @@ int ftpc_upload(int sockfd, const char *arg, size_t arglen)
 
 	// compute md5 hash of the file
 	infd = fopen(arg, "r");
-	memset(send_buf, 0, sizeof(send_buf));
 	while (send_counter < file_size) {
+		memset(send_buf, 0, sizeof(send_buf));
 		if ((read_current = fread(send_buf, sizeof(char), 
 						sizeof(send_buf), infd)) < 0) {
 			fprintf(stderr, "Bad read.\n");
@@ -249,7 +252,7 @@ int ftpc_upload(int sockfd, const char *arg, size_t arglen)
 	}
 
 	printf("Upload successful!\n");
-	printf("Total Bytes: %d Transfer Time: %.2f Rate: %.2f\n", 
+	printf("Total Bytes: %d Transfer Time: %.2f s Rate: %.2f bytes/s\n", 
 			file_size, transfer_secs, file_size / transfer_secs);
 	printf("MD5: ");
 	print_md5(hash_buf);

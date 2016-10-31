@@ -204,7 +204,7 @@ void cmd_upl(int s) {
 	int16_t file_len;
 	char file_name[MAX_LINE];
 	char file_buf[MAX_LINE];
-	int32_t file_size;
+	int32_t file_size = 0;
 	int32_t counter = 0;
 	int32_t file_read;
 	FILE* fp;
@@ -279,14 +279,14 @@ void cmd_upl(int s) {
 	fclose(fp);
 	
 	// unsuccessful transfer--mismatched hashes
-	if(strcmp(file_hash, recv_hash)) {
+	if(strncmp(file_hash, recv_hash, sizeof(file_hash))) {
 		perror("Mismatched hashes");
 		// TODO: delete output file
 		return;
 	// successful transfer
 	} else {
-		if(write(s, &trans_time, sizeof(trans_time)) == -1) {
-			perror("Send throughput error");
+		if(write(s, &ack, sizeof(ack)) == -1) {
+			perror("ack error");
 		}
 		return;
 	}
