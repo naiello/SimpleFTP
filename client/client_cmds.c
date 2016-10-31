@@ -276,10 +276,10 @@ int ftpc_list(int sockfd)
 	}
 
 	// receive the transmitted list
-	printf("\n");
+	memset(recv_buf, 0, sizeof(recv_buf));
+	
 	while (recv_counter < list_size) {
-		memset(recv_buf, 0, sizeof(recv_buf));
-		if ((recv_current = recv(sockfd, recv_buf, sizeof(recv_buf), 0)) < 0) {
+		if ((recv_current = recv(sockfd, recv_buf, list_size, 0)) < 0) {
 			fprintf(stderr, "Bad recv.\n");
 			continue;
 		}
@@ -287,7 +287,6 @@ int ftpc_list(int sockfd)
 		printf("%s", recv_buf);
 		recv_counter += recv_current;
 	}
-	printf("\n");
 
 	return 0;
 }

@@ -368,7 +368,6 @@ void cmd_lis(int s) {
 	int32_t list_size;
 
 	// zero buffers
-	bzero((void*)&dir, sizeof(dir));
 	bzero((void*)dir_list, sizeof(dir_list));
 
 	d = opendir("."); // error handling?
@@ -383,13 +382,13 @@ void cmd_lis(int s) {
 		return;
 	}
 
-	list_size = sizeof(dir_list); // is this correct?
+	list_size = strlen(dir_list); // is this correct?
 	list_size = htonl(list_size);
 	if(write(s, &list_size, sizeof(list_size)) == -1) {
 		perror("Send listing size error");
 		return;
 	}
-	if(write(s, dir_list, list_size) == -1) {
+	if(write(s, dir_list, strlen(dir_list)) == -1) {
 		perror("Send listing error");
 		return;
 	}
